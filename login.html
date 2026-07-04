@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigiLib FST - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#1d4ed8',
+                        secondary: '#3b82f6',
+                        accent: '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+        .toast-enter { animation: slideInUp 0.3s ease-out forwards; }
+        .toast-exit { animation: fadeOut 0.3s ease-out forwards; }
+        
+        .role-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .role-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0,0,0,0.15);
+        }
+        .role-card.selected {
+            border-color: #1d4ed8;
+            background-color: #eff6ff;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.15);
+        }
+        .role-card .icon-wrapper {
+            transition: all 0.3s ease;
+        }
+        .role-card.selected .icon-wrapper {
+            background-color: #1d4ed8;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <!-- ============ TOAST CONTAINER ============ -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[90] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ============ LOGIN CARD ============ -->
+    <div class="w-full max-w-md">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 transform transition-all duration-500">
+            
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-blue-100 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl shadow-sm">
+                    <i class="fa-solid fa-book-bookmark"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-800">DigiLib FST</h1>
+                <p class="text-sm text-slate-500 mt-1">Sistem Informasi Perpustakaan Digital</p>
+                <div class="mt-3 inline-block px-3 py-1 bg-blue-50 text-primary text-xs font-semibold rounded-full">
+                    <i class="fa-regular fa-building mr-1"></i> Fakultas Sains & Teknologi
+                </div>
+            </div>
+
+            <!-- Role Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-slate-700 mb-3">Pilih Role Anda</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <!-- Mahasiswa -->
+                    <div onclick="selectRole('mahasiswa')" id="role-mahasiswa" class="role-card selected rounded-xl p-3 text-center">
+                        <div class="icon-wrapper w-12 h-12 rounded-full bg-blue-100 text-primary flex items-center justify-center mx-auto mb-2">
+                            <i class="fa-solid fa-user-graduate text-xl"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-700">Mahasiswa</p>
+                    </div>
+                    
+                    <!-- Dosen -->
+                    <div onclick="selectRole('dosen')" id="role-dosen" class="role-card rounded-xl p-3 text-center">
+                        <div class="icon-wrapper w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto mb-2">
+                            <i class="fa-solid fa-chalkboard-user text-xl"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-700">Dosen</p>
+                    </div>
+                    
+                    <!-- Petugas -->
+                    <div onclick="selectRole('petugas')" id="role-petugas" class="role-card rounded-xl p-3 text-center">
+                        <div class="icon-wrapper w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto mb-2">
+                            <i class="fa-solid fa-user-tie text-xl"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-700">Petugas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ID Input -->
+            <div class="space-y-4">
+                <div>
+                    <label id="label-id" class="block text-sm font-semibold text-slate-700 mb-1">NIM</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-regular fa-id-card text-slate-400"></i>
+                        </div>
+                        <input type="text" id="login-id" oninput="checkNumeric(this)" placeholder="Masukkan NIM Anda" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all">
+                    </div>
+                    <p id="login-hint" class="text-[10px] text-slate-400 mt-1">*Wajib diisi untuk melanjutkan masuk</p>
+                    <p id="login-error" class="text-[10px] text-red-500 mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Error: ID hanya boleh berisi angka!</p>
+                </div>
+                
+                <button id="btn-login" onclick="executeLogin()" class="w-full bg-primary text-white font-bold rounded-xl px-4 py-3.5 mt-2 hover:bg-blue-800 transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login SSO Universitas
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-6 pt-4 border-t border-slate-200 text-center">
+                <p class="text-[10px] text-slate-400">
+                    <i class="fa-regular fa-shield-check mr-1"></i> 
+                    Sistem terintegrasi dengan SSO Universitas
+                </p>
+            </div>
+        </div>
+        
+        <!-- Version -->
+        <p class="text-center text-xs text-slate-400 mt-4">
+            v2.0 • Prototype Perpustakaan Digital FST
+        </p>
+    </div>
+
+    <script>
+        // ============================================================
+        // STATE
+        // ============================================================
+        let selectedRole = 'mahasiswa';
+
+        // ============================================================
+        // ROLE SELECTION
+        // ============================================================
+        function selectRole(role) {
+            selectedRole = role;
+            
+            // Update UI
+            document.querySelectorAll('.role-card').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`role-${role}`).classList.add('selected');
+            
+            // Update label & placeholder
+            const label = document.getElementById('label-id');
+            const input = document.getElementById('login-id');
+            const hint = document.getElementById('login-hint');
+            
+            if (role === 'mahasiswa') {
+                label.innerText = 'NIM';
+                input.placeholder = 'Masukkan NIM Anda';
+                hint.innerText = '*Masukkan NIM (angka) untuk melanjutkan';
+            } else if (role === 'dosen') {
+                label.innerText = 'NIP';
+                input.placeholder = 'Masukkan NIP Anda';
+                hint.innerText = '*Masukkan NIP (angka) untuk melanjutkan';
+            } else {
+                label.innerText = 'NIP';
+                input.placeholder = 'Masukkan NIP Anda';
+                hint.innerText = '*Masukkan NIP (angka) untuk melanjutkan';
+            }
+            
+            // Reset error state
+            document.getElementById('login-error').classList.add('hidden');
+            input.classList.remove('border-red-500', 'focus:ring-red-500');
+        }
+
+        // ============================================================
+        // VALIDATION
+        // ============================================================
+        function checkNumeric(input) {
+            const val = input.value;
+            const errorMsg = document.getElementById('login-error');
+            const hintMsg = document.getElementById('login-hint');
+            const btn = document.getElementById('btn-login');
+            
+            if (val && !/^\d+$/.test(val)) {
+                errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i>Error: ID hanya boleh berisi angka!';
+                errorMsg.classList.remove('hidden');
+                hintMsg.classList.add('hidden');
+                input.classList.add('border-red-500', 'focus:ring-red-500');
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                errorMsg.classList.add('hidden');
+                hintMsg.classList.remove('hidden');
+                input.classList.remove('border-red-500', 'focus:ring-red-500');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // ============================================================
+        // LOGIN
+        // ============================================================
+        function executeLogin() {
+            const loginId = document.getElementById('login-id').value.trim();
+            const btn = document.getElementById('btn-login');
+            const inputElement = document.getElementById('login-id');
+            const errorMsg = document.getElementById('login-error');
+            const hintMsg = document.getElementById('login-hint');
+            
+            // Validate empty
+            if (!loginId) {
+                showToast("ID tidak boleh kosong!", "fa-circle-xmark", "bg-red-500");
+                errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i>Error: ID tidak boleh kosong!';
+                errorMsg.classList.remove('hidden');
+                hintMsg.classList.add('hidden');
+                inputElement.classList.add('border-red-500', 'focus:ring-red-500');
+                inputElement.focus();
+                return;
+            }
+
+            // Validate numeric only
+            const isNumeric = /^\d+$/.test(loginId);
+            if (!isNumeric) {
+                showToast("ID hanya boleh berisi angka!", "fa-triangle-exclamation", "bg-red-500");
+                inputElement.focus();
+                return;
+            }
+
+            // Show loading
+            btn.innerHTML = '<i class="fa-solid fa-spinner spinner"></i> Memproses SSO...';
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            // Simulate SSO process
+            setTimeout(() => {
+                // Redirect based on role
+                let targetPage = '';
+                let displayName = '';
+                
+                if (selectedRole === 'mahasiswa') {
+                    targetPage = 'mahasiswa.html';
+                    displayName = 'Mahasiswa FST';
+                } else if (selectedRole === 'dosen') {
+                    targetPage = 'dosen.html';
+                    displayName = 'Dosen FST';
+                } else {
+                    targetPage = 'admin.html';
+                    displayName = 'Petugas Perpustakaan';
+                }
+
+                // Save user data to localStorage
+                const userData = {
+                    id: loginId,
+                    role: selectedRole,
+                    name: displayName,
+                    loginTime: new Date().toISOString()
+                };
+                localStorage.setItem('userData', JSON.stringify(userData));
+
+                // Show success toast
+                showToast(`Berhasil login sebagai ${displayName}`, 'fa-circle-check', 'bg-green-600');
+                
+                // Redirect after short delay
+                setTimeout(() => {
+                    window.location.href = targetPage;
+                }, 500);
+
+            }, 1200);
+        }
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+        function showToast(message, iconClass, bgColorClass) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${bgColorClass} max-w-sm pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass} text-lg"></i> <p>${message}</p>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // ============================================================
+        // KEYBOARD SHORTCUT (Enter to login)
+        // ============================================================
+        document.getElementById('login-id').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeLogin();
+            }
+        });
+
+        // ============================================================
+        // AUTO-FOCUS
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('login-id').focus();
+        });
+    </script>
+</body>
+</html>

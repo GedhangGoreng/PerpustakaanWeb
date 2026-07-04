@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigiLib FST - Mahasiswa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#1d4ed8', 
+                        secondary: '#3b82f6', 
+                        accent: '#f59e0b', 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .nav-item.active {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-right: 3px solid #1d4ed8;
+        }
+        
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .toast-enter { animation: slideInUp 0.3s ease-out forwards; }
+        .toast-exit { animation: fadeOut 0.3s ease-out forwards; }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+        
+        .view { display: none; }
+        .view.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden relative">
+
+    <!-- ============ LOGIN SCREEN ============ -->
+    <div id="login-screen" class="fixed inset-0 z-[100] bg-slate-100 flex items-center justify-center transition-opacity duration-500">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md mx-4 transform transition-transform duration-500 scale-100" id="login-card">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-100 text-primary rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                    <i class="fa-solid fa-book-bookmark"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">DigiLib FST</h1>
+                <p class="text-sm text-slate-500 mt-1">Sistem Informasi Perpustakaan Digital</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Masuk Sebagai (Role)</label>
+                    <select id="login-role" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-slate-50">
+                        <option value="mahasiswa">Mahasiswa</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">ID Pengguna (NIM)</label>
+                    <input type="text" id="login-id" oninput="checkNumeric(this)" placeholder="Masukkan NIM Anda" class="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-800 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+                    <p id="login-hint" class="text-[10px] text-slate-400 mt-1">*Wajib diisi untuk melanjutkan masuk</p>
+                    <p id="login-error" class="text-[10px] text-red-500 mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Error: NIM hanya boleh berisi angka!</p>
+                </div>
+                
+                <button id="btn-login" onclick="executeLogin()" class="w-full bg-primary text-white font-bold rounded-lg px-4 py-3 mt-4 hover:bg-blue-800 transition-colors flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login SSO Universitas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between hidden md:flex z-20 shadow-sm">
+        <div>
+            <div class="h-16 flex items-center px-6 border-b border-slate-200">
+                <div class="flex items-center gap-2 text-primary font-bold text-xl">
+                    <i class="fa-solid fa-book-bookmark"></i>
+                    <span>DigiLib FST</span>
+                </div>
+            </div>
+
+            <nav class="p-4 space-y-1">
+                <p class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-2">Menu Utama</p>
+                
+                <button onclick="switchTab('beranda')" id="nav-beranda" class="nav-item active w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    <i class="fa-solid fa-house w-5 text-center"></i> Beranda
+                </button>
+                
+                <button onclick="switchTab('katalog')" id="nav-katalog" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    <i class="fa-solid fa-magnifying-glass w-5 text-center"></i> Katalog & Pencarian
+                </button>
+
+                <p class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Aktivitas Saya</p>
+
+                <button onclick="switchTab('peminjaman')" id="nav-peminjaman" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    <i class="fa-solid fa-book-open-reader w-5 text-center"></i> Peminjaman Aktif
+                    <span id="sidebar-loan-count" class="ml-auto bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">2</span>
+                </button>
+
+                <button onclick="switchTab('wishlist')" id="nav-wishlist" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    <i class="fa-solid fa-bookmark w-5 text-center"></i> Wishlist Tersimpan
+                    <span id="sidebar-wishlist-count" class="ml-auto bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-slate-200 flex justify-between items-center group">
+            <div class="flex items-center gap-3 flex-1 overflow-hidden">
+                <img id="user-avatar" src="https://placehold.co/100x100/1d4ed8/ffffff?text=M" alt="User Avatar" class="w-9 h-9 rounded-full object-cover border border-slate-200">
+                <div class="overflow-hidden">
+                    <p id="user-name" class="text-sm font-semibold text-slate-800 truncate">Mahasiswa FST</p>
+                    <p id="user-id" class="text-xs text-slate-500 truncate">1234567890 (SSO)</p>
+                </div>
+            </div>
+            <button onclick="executeLogout()" class="text-slate-400 hover:text-red-500 p-2 rounded-lg transition-colors" title="Keluar">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 shadow-sm relative">
+            <button class="md:hidden text-slate-500 hover:text-slate-700">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+
+            <div class="flex items-center gap-2 md:gap-4 relative ml-auto">
+                <div class="relative">
+                    <button onclick="toggleDropdown('notif-dropdown')" class="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors" title="Notifikasi">
+                        <i class="fa-regular fa-bell text-lg"></i>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                    </button>
+                    <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                        <div class="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <span class="font-bold text-sm text-slate-800">Notifikasi</span>
+                            <span class="text-[10px] text-primary cursor-pointer hover:underline">Tandai dibaca</span>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto">
+                            <div class="p-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer flex gap-3 opacity-100">
+                                <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-clock"></i></div>
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-800">Jatuh Tempo Mendekat</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Buku "Sistem Basis Data" harus dikembalikan dalam 2 hari.</p>
+                                </div>
+                            </div>
+                            <div class="p-3 hover:bg-slate-50 cursor-pointer flex gap-3 opacity-70">
+                                <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check"></i></div>
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-800">Reservasi Berhasil</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Buku "Kalkulus" siap diambil di konter.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="openHelpModal()" class="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors" title="Bantuan">
+                    <i class="fa-regular fa-circle-question text-lg"></i>
+                </button>
+                
+                <button onclick="executeLogout()" class="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors md:hidden" title="Keluar">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6 md:p-8 relative" id="main-scroll-area" onclick="closeAllDropdowns(event)">
+            
+            <!-- ===== VIEW: BERANDA ===== -->
+            <section id="view-beranda" class="view active">
+                <div class="bg-gradient-to-r from-primary to-blue-500 rounded-2xl p-8 text-white shadow-lg mb-8 relative overflow-hidden">
+                    <div class="relative z-10 w-full md:w-2/3">
+                        <h1 id="hero-greeting" class="text-3xl font-bold mb-2">Selamat datang kembali!</h1>
+                        <p class="text-blue-100 mb-6">Kamu memiliki <span id="hero-loan-count">2</span> buku yang sedang dipinjam. Perhatikan tanggal jatuh tempo agar terhindar dari denda perpustakaan.</p>
+                        <button onclick="switchTab('peminjaman')" class="bg-white text-primary px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-slate-50 transition-colors shadow-sm">
+                            Kelola Peminjaman
+                        </button>
+                    </div>
+                    <i class="fa-solid fa-book-open text-[120px] absolute -right-10 -bottom-10 text-white opacity-20 transform -rotate-12"></i>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 text-primary flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-book"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">Total Dipinjam</p>
+                            <p class="text-2xl font-bold text-slate-800"><span id="stat-loan-count">2</span> <span class="text-xs font-normal text-slate-500">/ 5 Maks</span></p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">Jatuh Tempo Terdekat</p>
+                            <p class="text-2xl font-bold text-slate-800" id="stat-due">2 Hari</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-check-double"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium">Status Akun</p>
+                            <p class="text-lg font-bold text-green-600">Bebas Denda</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-slate-800">Rekomendasi Terbaru</h2>
+                    <button onclick="switchTab('katalog')" class="text-sm font-semibold text-primary hover:underline">Lihat Katalog</button>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onclick="openBookModal('Kalkulus Edisi 9', 'Tersedia', 'Purcell, Varberg', 'Kalkulus')">
+                        <div class="h-48 bg-slate-100 p-4 flex justify-center items-center">
+                            <img src="https://placehold.co/120x160/cbd5e1/475569?text=Kalkulus" class="h-full object-cover shadow-sm">
+                        </div>
+                        <div class="p-4">
+                            <span class="inline-block px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded mb-2">Tersedia Fisik</span>
+                            <h3 class="font-bold text-sm text-slate-800 line-clamp-2 leading-tight mb-1">Kalkulus: Edisi 9 Jilid 1</h3>
+                            <p class="text-xs text-slate-500">Purcell, Varberg</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onclick="openBookModal('Struktur Data dan Algoritma', 'Dipinjam', 'Mark Allen Weiss', 'Structs')">
+                        <div class="h-48 bg-slate-100 p-4 flex justify-center items-center">
+                            <img src="https://placehold.co/120x160/cbd5e1/475569?text=Structs" class="h-full object-cover shadow-sm">
+                        </div>
+                        <div class="p-4">
+                            <span class="inline-block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded mb-2">Semua Dipinjam</span>
+                            <h3 class="font-bold text-sm text-slate-800 line-clamp-2 leading-tight mb-1">Struktur Data dan Algoritma</h3>
+                            <p class="text-xs text-slate-500">Mark Allen Weiss</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== VIEW: KATALOG ===== -->
+            <section id="view-katalog" class="view">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-slate-800">Katalog Digital</h1>
+                    <p class="text-slate-500 text-sm">Cari dan temukan koleksi literatur Fakultas Sains dan Teknologi.</p>
+                </div>
+                
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-end">
+                    <div class="flex-1 w-full">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Kata Kunci</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400"></i>
+                            <input type="text" id="input-search-katalog" onkeyup="if(event.key === 'Enter') searchKatalog()" placeholder="Masukkan judul buku atau penulis (Tekan Enter)..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none">
+                        </div>
+                    </div>
+                    <div class="w-full md:w-auto flex gap-2">
+                        <button onclick="searchKatalog()" class="flex-1 md:w-32 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-800 transition-colors h-10 flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass"></i> Cari
+                        </button>
+                        <button onclick="resetKatalog()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors h-10" title="Reset Pencarian">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="catalog-empty" class="hidden bg-white border border-slate-200 rounded-xl p-10 text-center shadow-sm">
+                    <div class="text-slate-300 text-5xl mb-4"><i class="fa-regular fa-face-frown-open"></i></div>
+                    <h3 class="text-lg font-bold text-slate-700">Buku Tidak Ditemukan</h3>
+                    <p class="text-sm text-slate-500 mt-1">Buku dengan kata kunci tersebut belum tersedia. Silakan coba kata kunci lain.</p>
+                </div>
+
+                <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            </section>
+
+            <!-- ===== VIEW: PEMINJAMAN ===== -->
+            <section id="view-peminjaman" class="view">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-slate-800">Sirkulasi & Peminjaman Aktif</h1>
+                    <p class="text-slate-500 text-sm">Kelola buku fisik yang sedang Anda pinjam dan lakukan perpanjangan.</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <h2 class="font-bold text-slate-800">Daftar Pinjaman (<span id="loan-header-count">2</span> Buku)</h2>
+                    </div>
+                    <div id="peminjaman-list" class="divide-y divide-slate-100"></div>
+                </div>
+            </section>
+
+            <!-- ===== VIEW: WISHLIST ===== -->
+            <section id="view-wishlist" class="view">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-slate-800">Wishlist Tersimpan</h1>
+                    <p class="text-slate-500 text-sm">Daftar buku yang Anda pantau ketersediaannya.</p>
+                </div>
+                <div id="wishlist-empty" class="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-sm">
+                    <div class="text-slate-300 text-5xl mb-4"><i class="fa-regular fa-bookmark"></i></div>
+                    <h3 class="text-lg font-bold text-slate-700">Wishlist Kosong</h3>
+                    <p class="text-sm text-slate-500 mt-1">Anda belum menyimpan buku apapun ke dalam wishlist.</p>
+                </div>
+                <div id="wishlist-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ============ MODAL DETAIL BUKU ============ -->
+    <div id="book-modal" class="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col md:flex-row overflow-hidden transform scale-95 transition-transform duration-300" id="modal-content">
+            <div class="w-full md:w-1/3 bg-slate-50 p-6 flex flex-col items-center border-r border-slate-200">
+                <div class="w-32 h-48 bg-slate-200 rounded shadow-md mb-6 relative">
+                    <img id="modal-img" src="" class="w-full h-full object-cover rounded">
+                </div>
+                <div class="w-full flex flex-col gap-3" id="modal-actions"></div>
+            </div>
+            <div class="w-full md:w-2/3 p-6 md:p-8 overflow-y-auto relative">
+                <button onclick="closeModal('book-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div id="modal-status-badge" class="mb-3"></div>
+                <h2 id="modal-title" class="text-2xl font-bold text-slate-800 mb-1 leading-tight"></h2>
+                <p id="modal-author" class="text-primary font-medium text-sm mb-6"></p>
+                <div class="border-t border-slate-200 pt-4">
+                    <h3 class="font-bold text-slate-800 text-sm mb-2">Sinopsis</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Buku ini membahas secara komprehensif mengenai dasar-dasar ilmu yang relevan. Dilengkapi dengan studi kasus nyata dan latihan soal untuk membantu mahasiswa menguasai materi dengan lebih efisien.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ MODAL HELP ============ -->
+    <div id="help-modal" class="fixed inset-0 z-[70] bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300" id="help-modal-content">
+            <div class="bg-primary text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold"><i class="fa-solid fa-headset mr-2"></i>Pusat Bantuan</h3>
+                <button onclick="closeModal('help-modal')" class="text-blue-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6">
+                <h4 class="font-bold text-slate-800 mb-2">FAQ Peminjaman</h4>
+                <ul class="text-sm text-slate-600 space-y-2 mb-6 list-disc pl-4">
+                    <li>Buku fisik dapat dipinjam maksimal 7 hari.</li>
+                    <li>Perpanjangan hanya dapat dilakukan 1x sebelum jatuh tempo.</li>
+                    <li>Denda keterlambatan Rp. 1.000 / hari.</li>
+                </ul>
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                    <p class="text-xs text-slate-500 mb-1">Butuh bantuan teknis?</p>
+                    <p class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-envelope text-primary mr-1"></i> perpustakaan@fst.univ.ac.id</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ TOAST CONTAINER ============ -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[90] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ============ JAVASCRIPT ============ -->
+    <script>
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentUser = null;
+        let selectedBook = {};
+        
+        let activeLoans = [
+            { id: "trx-01", title: "Sistem Basis Data", date: "12 Okt 2023", due: "Besok, 26 Okt 2023", progress: 85, cover: "DB", extended: false },
+            { id: "trx-02", title: "The Design of Everyday Things", date: "18 Okt 2023", due: "1 Nov 2023", progress: 30, cover: "UX", extended: false }
+        ];
+        
+        let wishlistData = [];
+        
+        let catalogData = [
+            { title: "Fisika Dasar untuk Universitas", status: "Tersedia", author: "Halliday & Resnick", coverText: "Fisika", label: "Tersedia Fisik", labelColor: "bg-green-100 text-green-700" },
+            { title: "Jaringan Komputer: Pendekatan Top-Down", status: "E-Book", author: "Kurose & Ross", coverText: "Jaringan", label: "E-Book", labelColor: "bg-blue-100 text-blue-700" },
+            { title: "Kalkulus: Edisi 9 Jilid 1", status: "Tersedia", author: "Purcell, Varberg", coverText: "Kalkulus", label: "Tersedia Fisik", labelColor: "bg-green-100 text-green-700" },
+            { title: "Struktur Data dan Algoritma", status: "Dipinjam", author: "Mark Allen Weiss", coverText: "Structs", label: "Semua Dipinjam", labelColor: "bg-red-100 text-red-700" },
+            { title: "Artificial Intelligence Modern", status: "E-Book", author: "Stuart Russell", coverText: "AI", label: "E-Book", labelColor: "bg-blue-100 text-blue-700" }
+        ];
+
+        // ============================================================
+        // LOGIN
+        // ============================================================
+        function checkNumeric(input) {
+            const val = input.value;
+            const errorMsg = document.getElementById('login-error');
+            const hintMsg = document.getElementById('login-hint');
+            const btn = document.getElementById('btn-login');
+            
+            if (val && !/^\d+$/.test(val)) {
+                errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i>Error: NIM hanya boleh berisi angka!';
+                errorMsg.classList.remove('hidden');
+                hintMsg.classList.add('hidden');
+                input.classList.add('border-red-500', 'focus:ring-red-500');
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                errorMsg.classList.add('hidden');
+                hintMsg.classList.remove('hidden');
+                input.classList.remove('border-red-500', 'focus:ring-red-500');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function executeLogin() {
+            const role = document.getElementById('login-role').value;
+            const loginId = document.getElementById('login-id').value.trim();
+            const btn = document.getElementById('btn-login');
+            const inputElement = document.getElementById('login-id');
+            const errorMsg = document.getElementById('login-error');
+            const hintMsg = document.getElementById('login-hint');
+            
+            if (!loginId) {
+                showToast("NIM tidak boleh kosong!", "fa-circle-xmark", "bg-red-500");
+                errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i>Error: NIM tidak boleh kosong!';
+                errorMsg.classList.remove('hidden');
+                hintMsg.classList.add('hidden');
+                inputElement.classList.add('border-red-500', 'focus:ring-red-500');
+                inputElement.focus();
+                return;
+            }
+
+            const isNumeric = /^\d+$/.test(loginId);
+            if (!isNumeric) {
+                showToast("NIM hanya boleh berisi angka!", "fa-triangle-exclamation", "bg-red-500");
+                inputElement.focus();
+                return;
+            }
+
+            btn.innerHTML = '<i class="fa-solid fa-spinner spinner"></i> Memproses SSO...';
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            setTimeout(() => {
+                let name = 'Mahasiswa FST';
+                let initial = 'M';
+                
+                document.getElementById('user-name').innerText = name;
+                document.getElementById('user-id').innerText = loginId + ' (SSO)';
+                document.getElementById('hero-greeting').innerText = `Selamat datang kembali, ${name.split(' ')[0]}!`;
+                document.getElementById('user-avatar').src = `https://placehold.co/100x100/1d4ed8/ffffff?text=${initial}`;
+
+                const overlay = document.getElementById('login-screen');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => { overlay.classList.add('hidden'); }, 500);
+
+                showToast(`Berhasil masuk sebagai ${name}`, 'fa-circle-check', 'bg-green-600');
+                
+                renderPeminjaman();
+                renderCatalog();
+                renderWishlist();
+            }, 1000);
+        }
+
+        function executeLogout() {
+            const overlay = document.getElementById('login-screen');
+            overlay.classList.remove('hidden');
+            setTimeout(() => { overlay.classList.remove('opacity-0'); }, 10);
+            
+            document.getElementById('login-id').value = '';
+            const btn = document.getElementById('btn-login');
+            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login SSO Universitas';
+            btn.classList.remove('opacity-80', 'cursor-not-allowed');
+            checkNumeric(document.getElementById('login-id'));
+            
+            switchTab('beranda');
+            showToast("Anda telah berhasil keluar.", "fa-circle-check", "bg-green-600");
+        }
+
+        // ============================================================
+        // NAVIGASI
+        // ============================================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active', 'bg-eff6ff', 'text-primary', 'border-r-4', 'border-primary');
+                el.classList.add('text-slate-600');
+            });
+            
+            const view = document.getElementById(`view-${tabId}`);
+            if (view) view.classList.add('active');
+            
+            const nav = document.getElementById(`nav-${tabId}`);
+            if (nav) {
+                nav.classList.add('active');
+                nav.classList.remove('text-slate-600');
+            }
+            
+            document.getElementById('main-scroll-area').scrollTop = 0;
+            document.getElementById('notif-dropdown').classList.add('hidden');
+        }
+
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.classList.toggle('hidden');
+        }
+        
+        function closeAllDropdowns(event) {
+            if (!event.target.closest('.relative')) {
+                document.querySelectorAll('[id$="-dropdown"]').forEach(d => d.classList.add('hidden'));
+            }
+        }
+
+        function openHelpModal() {
+            const m = document.getElementById('help-modal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+            setTimeout(() => {
+                m.classList.remove('opacity-0');
+                document.getElementById('help-modal-content').classList.remove('scale-95');
+                document.getElementById('help-modal-content').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal(modalId) {
+            const m = document.getElementById(modalId);
+            const content = m.querySelector('div');
+            m.classList.add('opacity-0');
+            if (content) {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+            }
+            setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
+        }
+
+        // ============================================================
+        // BOOK MODAL
+        // ============================================================
+        function openBookModal(title, status, author, coverText) {
+            selectedBook = { title, status, author, coverText };
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-author').innerText = author;
+            document.getElementById('modal-img').src = `https://placehold.co/120x160/cbd5e1/475569?text=${coverText}`;
+            
+            const badge = document.getElementById('modal-status-badge');
+            const actions = document.getElementById('modal-actions');
+
+            if (status === 'Tersedia') {
+                badge.innerHTML = `<span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200"><i class="fa-solid fa-circle-check mr-1"></i> Tersedia Fisik</span>`;
+                actions.innerHTML = `
+                    <button onclick="simulateAction('reservasi')" class="w-full bg-primary text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-800 transition-colors flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-hand-holding-hand"></i> Reservasi Fisik
+                    </button>`;
+            } else if (status === 'E-Book') {
+                badge.innerHTML = `<span class="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full border border-blue-200"><i class="fa-solid fa-tablet-screen-button mr-1"></i> E-Book</span>`;
+                actions.innerHTML = `
+                    <button onclick="simulateAction('baca')" class="w-full bg-green-600 text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-book-open-reader"></i> Baca E-Book Sekarang
+                    </button>`;
+            } else {
+                badge.innerHTML = `<span class="inline-block px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200"><i class="fa-solid fa-circle-xmark mr-1"></i> Sedang Dipinjam</span>`;
+                actions.innerHTML = `
+                    <button onclick="simulateAction('wishlist')" class="w-full bg-slate-800 text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-slate-900 transition-colors flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-bell"></i> Kabari Jika Tersedia
+                    </button>`;
+            }
+
+            actions.innerHTML += `
+                <button onclick="simulateAction('wishlist')" class="w-full bg-white border border-slate-300 text-slate-700 py-2.5 rounded-lg font-semibold text-sm hover:bg-slate-50 transition-colors flex justify-center items-center gap-2">
+                    <i class="fa-regular fa-bookmark"></i> Tambah Wishlist
+                </button>`;
+
+            const m = document.getElementById('book-modal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+            setTimeout(() => {
+                m.classList.remove('opacity-0');
+                document.getElementById('modal-content').classList.remove('scale-95');
+                document.getElementById('modal-content').classList.add('scale-100');
+            }, 10);
+        }
+
+        function simulateAction(type) {
+            closeModal('book-modal');
+            
+            if (type === 'reservasi') {
+                const newId = `trx-${Math.floor(Math.random() * 1000)}`;
+                activeLoans.unshift({
+                    id: newId,
+                    title: selectedBook.title,
+                    date: "Hari ini",
+                    due: "7 Hari Lagi",
+                    progress: 0,
+                    cover: selectedBook.coverText,
+                    extended: false
+                });
+                renderPeminjaman();
+                showToast("Berhasil! Buku direservasi, silakan ambil di konter.", "fa-circle-check", "bg-green-600");
+                
+            } else if (type === 'wishlist') {
+                if (!wishlistData.find(w => w.title === selectedBook.title)) {
+                    wishlistData.push(selectedBook);
+                    renderWishlist();
+                }
+                showToast("Buku ditambahkan ke Wishlist Tersimpan.", "fa-bookmark", "bg-slate-800");
+                
+            } else if (type === 'baca') {
+                showToast("Membuka PDF E-Book di tab baru...", "fa-spinner fa-spin", "bg-primary");
+            }
+        }
+
+        // ============================================================
+        // PEMINJAMAN
+        // ============================================================
+        function renderPeminjaman() {
+            const container = document.getElementById('peminjaman-list');
+            container.innerHTML = '';
+            
+            document.getElementById('loan-header-count').innerText = activeLoans.length;
+            document.getElementById('sidebar-loan-count').innerText = activeLoans.length;
+            document.getElementById('stat-loan-count').innerText = activeLoans.length;
+            document.getElementById('hero-loan-count').innerText = activeLoans.length;
+
+            activeLoans.forEach(loan => {
+                const btnHTML = loan.extended 
+                    ? `<span class="text-xs text-slate-400 font-semibold italic">Batas perpanjangan habis</span>`
+                    : `<button onclick="perpanjangBuku('${loan.id}', this)" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 w-full md:w-auto">Perpanjang</button>`;
+
+                const warningColor = loan.progress > 80 ? 'bg-amber-500' : 'bg-green-500';
+
+                container.innerHTML += `
+                    <div class="flex flex-col md:flex-row items-start md:items-center p-5 gap-4 hover:bg-slate-50 transition-colors">
+                        <div class="w-16 h-20 bg-slate-200 rounded flex-shrink-0 overflow-hidden shadow-sm">
+                            <img src="https://placehold.co/64x80/cbd5e1/475569?text=${loan.cover}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 w-full">
+                            <h3 class="font-bold text-slate-800 text-base leading-tight">${loan.title}</h3>
+                            <p class="text-xs text-slate-500 mb-2">ID: ${loan.id} • Dipinjam: ${loan.date}</p>
+                            <div class="w-full max-w-md bg-slate-200 rounded-full h-1.5 mb-1">
+                                <div class="${warningColor} h-1.5 rounded-full" style="width: ${loan.progress}%"></div>
+                            </div>
+                            <p class="text-xs font-semibold ${loan.progress > 80 ? 'text-amber-600' : 'text-slate-500'}">Jatuh tempo: ${loan.due}</p>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full md:w-auto mt-3 md:mt-0 text-right">
+                            ${btnHTML}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function perpanjangBuku(id, btnElement) {
+            const loanIndex = activeLoans.findIndex(l => l.id === id);
+            if (loanIndex > -1 && !activeLoans[loanIndex].extended) {
+                btnElement.innerHTML = '<i class="fa-solid fa-spinner spinner"></i>';
+                btnElement.disabled = true;
+
+                setTimeout(() => {
+                    activeLoans[loanIndex].extended = true;
+                    activeLoans[loanIndex].due = "Diperpanjang (+7 Hari)";
+                    activeLoans[loanIndex].progress = 10;
+                    renderPeminjaman();
+                    showToast("Masa pinjam berhasil diperpanjang 7 hari.", "fa-check", "bg-green-600");
+                }, 800);
+            }
+        }
+
+        // ============================================================
+        // KATALOG
+        // ============================================================
+        function renderCatalog(query = "") {
+            const grid = document.getElementById('catalog-grid');
+            const empty = document.getElementById('catalog-empty');
+            grid.innerHTML = '';
+            
+            const filtered = catalogData.filter(book => 
+                book.title.toLowerCase().includes(query.toLowerCase()) || 
+                book.author.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+            } else {
+                grid.classList.remove('hidden');
+                empty.classList.add('hidden');
+                filtered.forEach(book => {
+                    grid.innerHTML += `
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-row h-36">
+                            <div class="w-24 bg-slate-100 flex-shrink-0 flex items-center justify-center p-2">
+                                 <img src="https://placehold.co/80x110/cbd5e1/475569?text=${book.coverText}" class="h-full object-cover shadow-sm">
+                            </div>
+                            <div class="p-3 flex flex-col justify-between flex-1">
+                                <div>
+                                    <span class="inline-block px-2 py-0.5 ${book.labelColor} text-[10px] font-bold rounded mb-1">${book.label}</span>
+                                    <h3 class="font-bold text-sm text-slate-800 line-clamp-2 leading-tight">${book.title}</h3>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">${book.author}</p>
+                                </div>
+                                <button onclick="openBookModal('${book.title}', '${book.status}', '${book.author}', '${book.coverText}')" class="text-xs text-primary font-semibold text-left hover:underline mt-2">Detail & Reservasi &rarr;</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function searchKatalog() {
+            const query = document.getElementById('input-search-katalog').value.trim();
+            renderCatalog(query);
+            if (query !== "") {
+                showToast(`Menampilkan hasil untuk: "${query}"`, "fa-magnifying-glass", "bg-secondary");
+            }
+        }
+
+        function resetKatalog() {
+            document.getElementById('input-search-katalog').value = '';
+            renderCatalog();
+            showToast("Katalog telah di-reset.", "fa-rotate-right", "bg-slate-600");
+        }
+
+        // ============================================================
+        // WISHLIST
+        // ============================================================
+        function renderWishlist() {
+            const grid = document.getElementById('wishlist-grid');
+            const empty = document.getElementById('wishlist-empty');
+            const badge = document.getElementById('sidebar-wishlist-count');
+
+            badge.innerText = wishlistData.length;
+            if (wishlistData.length > 0) {
+                badge.classList.remove('hidden');
+                grid.classList.remove('hidden');
+                empty.classList.add('hidden');
+            } else {
+                badge.classList.add('hidden');
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+            }
+
+            grid.innerHTML = '';
+            wishlistData.forEach(item => {
+                grid.innerHTML += `
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-row h-32">
+                        <div class="w-24 bg-slate-100 flex-shrink-0 flex items-center justify-center p-2">
+                             <img src="https://placehold.co/80x110/cbd5e1/475569?text=${item.coverText}" class="h-full object-cover shadow-sm">
+                        </div>
+                        <div class="p-3 flex flex-col justify-between flex-1">
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-800 line-clamp-2 leading-tight">${item.title}</h3>
+                                <p class="text-[11px] text-slate-500 mt-0.5">${item.author}</p>
+                            </div>
+                            <button onclick="hapusWishlist('${item.title}')" class="text-xs text-red-500 font-semibold text-left hover:underline mt-2"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function hapusWishlist(title) {
+            wishlistData = wishlistData.filter(item => item.title !== title);
+            renderWishlist();
+            showToast("Buku dihapus dari daftar Wishlist.", "fa-trash-can", "bg-slate-800");
+        }
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+        function showToast(message, iconClass, bgColorClass) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${bgColorClass} max-w-sm pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass} text-lg"></i> <p>${message}</p>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPeminjaman();
+            renderCatalog();
+        });
+    </script>
+</body>
+</html>
